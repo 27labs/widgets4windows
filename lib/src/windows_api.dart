@@ -151,6 +151,24 @@ void showAndPlaceWindow(int hwnd, GridRect rect) {
   );
 }
 
+void hideWindowFromTaskbar(int hwnd) {
+  final extendedStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+  final hiddenStyle = (extendedStyle | WS_EX_TOOLWINDOW) & ~WS_EX_APPWINDOW;
+  if (hiddenStyle != extendedStyle) {
+    SetWindowLongPtr(hwnd, GWL_EXSTYLE, hiddenStyle);
+  }
+
+  SetWindowPos(
+    hwnd,
+    0,
+    0,
+    0,
+    0,
+    0,
+    SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+  );
+}
+
 void pushWindowToBottom(int hwnd) {
   SetWindowPos(
     hwnd,

@@ -74,6 +74,7 @@ class WidgetWallController {
         columnSpan: widget.columnSpan,
       );
 
+      hideWindowFromTaskbar(hwnd);
       showAndPlaceWindow(hwnd, rect);
       _managed
           .add(ManagedWidgetProcess(process: process, hwnd: hwnd, rect: rect));
@@ -84,6 +85,7 @@ class WidgetWallController {
         final hwnd = entry.hwnd;
         final rect = entry.rect;
         if (hwnd != null && rect != null && isWindowAlive(hwnd)) {
+          hideWindowFromTaskbar(hwnd);
           showAndPlaceWindow(hwnd, rect);
           pushWindowToBottom(hwnd);
         }
