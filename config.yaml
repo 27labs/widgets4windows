@@ -1,0 +1,23 @@
+grid:
+  rows: 5
+  columns: 10
+  padding: 30
+
+widgets:
+  - exe: zed.exe
+    row: 0
+    column: 0
+    rowSpan: 5
+    columnSpan: 3
+
+  - exe: zed.exe
+    row: 0
+    column: 3
+    rowSpan: 5
+    columnSpan: 4
+
+  - exe: zed.exe
+    row: 0
+    column: 7
+    rowSpan: 5
+    columnSpan: 3
