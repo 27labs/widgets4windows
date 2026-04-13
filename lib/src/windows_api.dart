@@ -183,6 +183,10 @@ void pushWindowToBottom(int hwnd) {
 
 bool isWindowAlive(int hwnd) => IsWindow(hwnd) != 0;
 
+void closeWindowGracefully(int hwnd) {
+  PostMessage(hwnd, WM_CLOSE, 0, 0);
+}
+
 WindowInsets getWindowVisibleInsets(int hwnd) {
   final outerRect = calloc<RECT>();
   final visibleRect = calloc<RECT>();

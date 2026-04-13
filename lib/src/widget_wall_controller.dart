@@ -32,7 +32,7 @@ class WidgetWallController {
     );
 
     for (final widget in config.widgets) {
-      final existingWindows =
+      final existingHandles =
           listVisibleTopLevelWindows().map((window) => window.hwnd).toSet();
 
       final process = await Process.start(
@@ -44,7 +44,7 @@ class WidgetWallController {
       _tryAssignProcessToJob(process.pid);
 
       final hwnd = await waitForNewTopLevelWindow(
-            existingHandles: existingWindows,
+            existingHandles: existingHandles,
             timeout: widget.windowPollTimeout,
           ) ??
           await waitForMainWindow(
@@ -57,15 +57,18 @@ class WidgetWallController {
           'Skipping layout for PID ${process.pid} (${widget.exe}) because no visible top-level window appeared.',
         );
         _managed.add(
-          ManagedWidgetProcess(process: process, hwnd: null, rect: null),
+          ManagedWidgetProcess(
+            process: process,
+            hwnd: null,
+            rect: null,
+            closeWindowOnlyOnDispose: false,
+          ),
         );
         continue;
       }
 
       final ownerPid = getWindowProcessId(hwnd);
-      if (ownerPid != process.pid) {
-        _tryAssignProcessToJob(ownerPid);
-      }
+      final closeWindowOnlyOnDispose = ownerPid != process.pid;
 
       final rect = layout.rectFor(
         row: widget.row,
@@ -76,8 +79,14 @@ class WidgetWallController {
 
       hideWindowFromTaskbar(hwnd);
       showAndPlaceWindow(hwnd, rect);
-      _managed
-          .add(ManagedWidgetProcess(process: process, hwnd: hwnd, rect: rect));
+      _managed.add(
+        ManagedWidgetProcess(
+          process: process,
+          hwnd: hwnd,
+          rect: rect,
+          closeWindowOnlyOnDispose: closeWindowOnlyOnDispose,
+        ),
+      );
     }
 
     _enforcerTimer = Timer.periodic(const Duration(milliseconds: 800), (_) {
@@ -104,6 +113,14 @@ class WidgetWallController {
     _jobObject = null;
 
     for (final entry in _managed) {
+      final hwnd = entry.hwnd;
+      if (entry.closeWindowOnlyOnDispose &&
+          hwnd != null &&
+          isWindowAlive(hwnd)) {
+        closeWindowGracefully(hwnd);
+        continue;
+      }
+
       entry.process.kill();
     }
     _managed.clear();
@@ -123,9 +140,11 @@ class ManagedWidgetProcess {
     required this.process,
     required this.hwnd,
     required this.rect,
+    required this.closeWindowOnlyOnDispose,
   });
 
   final Process process;
   final int? hwnd;
   final GridRect? rect;
+  final bool closeWindowOnlyOnDispose;
 }
