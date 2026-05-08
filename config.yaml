@@ -1,23 +1,32 @@
 grid:
-  rows: 5
-  columns: 10
-  padding: 30
+  rows: 9
+  columns: 16
+  padding: 8
 
 widgets:
-  - exe: zed.exe
+  - exe: 'Weather\weather.exe'
     row: 0
     column: 0
     rowSpan: 5
-    columnSpan: 3
-
-  - exe: zed.exe
-    row: 0
-    column: 3
-    rowSpan: 5
     columnSpan: 4
 
-  - exe: zed.exe
+  - exe: 'Habits\habit_tracker.exe'
+    args: [ejercicio]
+    row: 5
+    column: 0
+    rowSpan: 4
+    columnSpan: 8
+
+  - exe: 'Habits\habit_tracker.exe'
+    args: [pizza]
+    row: 1
+    column: 4
+    rowSpan: 2
+    columnSpan: 5
+
+  - exe: 'Habits\habit_tracker.exe'
+    args: [pelicula]
     row: 0
-    column: 7
-    rowSpan: 5
-    columnSpan: 3
+    column: 11
+    rowSpan: 9 
+    columnSpan: 5

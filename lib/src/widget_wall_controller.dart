@@ -40,6 +40,7 @@ class WidgetWallController {
         widget.arguments,
         workingDirectory: widget.workingDirectory,
       );
+      _drainProcessOutput(process);
 
       _tryAssignProcessToJob(process.pid);
 
@@ -132,6 +133,11 @@ class WidgetWallController {
     } catch (_) {
       stderr.writeln('Warning: could not assign PID $pid to the cleanup job.');
     }
+  }
+
+  void _drainProcessOutput(Process process) {
+    process.stdout.listen(stdout.add);
+    process.stderr.listen(stderr.add);
   }
 }
 
