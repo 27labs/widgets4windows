@@ -1,0 +1,6 @@
+[submodule "weather"]
+	path = weather
+	url = https://github.com/27labs/weather
+[submodule "habit_tracker"]
+	path = habit_tracker
+	url = https://github.com/27labs/habit_tracker
