@@ -5,7 +5,7 @@ import 'package:widget_wall/src/config.dart';
 import 'package:widget_wall/src/widget_wall_controller.dart';
 
 Future<void> main(List<String> args) async {
-  final configPath = args.isNotEmpty ? args.first : 'config.yaml';
+  final configPath = args.isNotEmpty ? args.first : _defaultConfigPath();
   final config = await WallConfig.load(configPath);
   final controller = WidgetWallController(config: config);
 
@@ -37,4 +37,9 @@ Future<void> main(List<String> args) async {
     exitCode = 1;
     await controller.dispose();
   }
+}
+
+String _defaultConfigPath() {
+  final executableDirectory = File(Platform.resolvedExecutable).parent.path;
+  return '$executableDirectory${Platform.pathSeparator}config.yaml';
 }

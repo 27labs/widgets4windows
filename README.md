@@ -46,6 +46,8 @@ If the same executable appears multiple times, the controller launches one separ
 3. Update `config.yaml`
 4. Start the wall with `dart run bin/widget_wall.dart`
 
+When compiled to an `.exe`, running without arguments loads `config.yaml` from the same directory as the executable.
+
 Pass a custom config path if needed:
 
 ```powershell
