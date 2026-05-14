@@ -47,7 +47,7 @@ If the same executable appears multiple times, the controller launches one separ
 4. Start the wall with `dart run bin/widget_wall.dart`
 
 When compiled to an `.exe`, running without arguments loads `config.yaml` from the same directory as the executable.
-To compile the controller and prevent a terminal window from opening when it is launched from the Windows Run dialog, use `editbin.exe` from a Visual Studio Developer PowerShell:
+To compile the controller and prevent a terminal window from opening when it is launched, use `editbin.exe` from a Visual Studio Developer PowerShell:
 
 ```powershell
 dart compile exe .\bin\widget_wall.dart -o .\bin\widget_wall.exe
