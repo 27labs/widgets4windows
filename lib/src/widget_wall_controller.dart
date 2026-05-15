@@ -24,6 +24,8 @@ class WidgetWallController {
       throw StateError('WidgetWallController.start() was already called.');
     }
 
+    await Future<void>.delayed(const Duration(milliseconds: 2700));
+
     _jobObject = WindowsJobObject.createKillOnClose();
     final display = getPrimaryWorkAreaBounds();
     final layout = GridLayout(
