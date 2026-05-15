@@ -4,3 +4,6 @@
 [submodule "habit_tracker"]
 	path = habit_tracker
 	url = https://github.com/27labs/habit_tracker
+[submodule "pomodoro_timer"]
+	path = pomodoro_timer
+	url = https://github.com/27labs/pomodoro_timer
