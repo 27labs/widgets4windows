@@ -3,11 +3,16 @@ import 'dart:io';
 
 import 'package:widget_wall/src/config.dart';
 import 'package:widget_wall/src/windows_api.dart';
+import 'package:widget_wall/src/windows_event_log.dart';
 
 class WidgetWallController {
-  WidgetWallController({required this.config});
+  WidgetWallController({
+    required this.config,
+    required this.eventLog,
+  });
 
   final WallConfig config;
+  final WindowsEventLog eventLog;
 
   final List<ManagedWidgetProcess> _managed = [];
   Timer? _enforcerTimer;
@@ -54,7 +59,7 @@ class WidgetWallController {
           );
 
       if (hwnd == null) {
-        stderr.writeln(
+        eventLog.warning(
           'Skipping layout for PID ${process.pid} (${widget.exe}) because no visible top-level window appeared.',
         );
         _managed.add(
@@ -131,13 +136,20 @@ class WidgetWallController {
     try {
       _jobObject?.assignProcess(pid);
     } catch (_) {
-      stderr.writeln('Warning: could not assign PID $pid to the cleanup job.');
+      eventLog.warning('Could not assign PID $pid to the cleanup job.');
     }
   }
 
   void _drainProcessOutput(Process process) {
-    process.stdout.listen(stdout.add);
-    process.stderr.listen(stderr.add);
+    process.stdout.drain<void>();
+    process.stderr.listen((data) {
+      final message = systemEncoding.decode(data).trim();
+      if (message.isNotEmpty) {
+        eventLog.warning(
+          'Widget process ${process.pid} wrote to stderr: $message',
+        );
+      }
+    });
   }
 }
 
