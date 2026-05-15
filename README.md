@@ -9,6 +9,10 @@
 - keeps the managed windows pushed behind unrelated windows, and
 - tears down all launched processes when the controller exits.
 
+<p align="center">
+  <img src="assets/preview.png" alt="Widget Wall preview" width="720">
+</p>
+
 ## Config
 
 `config.yaml` uses one `widgets` entry per desired app instance:
