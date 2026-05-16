@@ -97,7 +97,7 @@ class WidgetWallController {
       );
     }
 
-    _enforcerTimer = Timer.periodic(const Duration(milliseconds: 800), (_) {
+    _enforcerTimer = Timer.periodic(const Duration(milliseconds: 2700), (_) {
       for (final entry in _managed) {
         final hwnd = entry.hwnd;
         final rect = entry.rect;

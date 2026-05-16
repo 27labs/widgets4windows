@@ -64,7 +64,7 @@ class WidgetEntry {
     required this.columnSpan,
     required this.arguments,
     this.workingDirectory,
-    this.windowPollTimeout = const Duration(seconds: 15),
+    this.windowPollTimeout = const Duration(seconds: 27),
   });
 
   final String exe;
@@ -96,7 +96,7 @@ class WidgetEntry {
       arguments: args,
       workingDirectory: yaml['workingDirectory']?.toString(),
       windowPollTimeout: Duration(
-        milliseconds: (yaml['windowPollTimeoutMs'] as int?) ?? 15000,
+        milliseconds: (yaml['windowPollTimeoutMs'] as int?) ?? 27000,
       ),
     );
   }
