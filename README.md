@@ -1,6 +1,6 @@
-# Widget Wall MVP
+# Widgets4Windows
 
-`Widget Wall` is a headless Dart controller for Windows 11 that:
+`Widgets4Windows` is a headless Dart controller for Windows 11 that:
 
 - reads a `config.yaml` file,
 - launches one process per configured widget entry,
@@ -10,7 +10,7 @@
 - tears down all launched processes when the controller exits.
 
 <p align="center">
-  <img src="assets/preview.png" alt="Widget Wall preview" width="720">
+  <img src="assets/preview.png" alt="Widgets4Windows preview" width="720">
 </p>
 
 ## Config
@@ -54,8 +54,8 @@ When compiled to an `.exe`, running without arguments loads `config.yaml` from t
 To compile the controller and prevent a terminal window from opening when it is launched, use `editbin.exe` from a Visual Studio Developer PowerShell:
 
 ```powershell
-dart compile exe .\bin\widget_wall.dart -o .\bin\widget_wall.exe
-editbin.exe /SUBSYSTEM:WINDOWS .\bin\widget_wall.exe
+dart compile exe .\bin\widget_wall.dart -o .\bin\w4w.exe
+editbin.exe /SUBSYSTEM:WINDOWS .\bin\w4w.exe
 ```
 
 Copy `config.yaml` next to the compiled executable if you want to run it without passing a config path.
