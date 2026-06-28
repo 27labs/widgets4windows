@@ -7,6 +7,7 @@ import 'package:widget_wall/src/windows_event_log.dart';
 
 const Duration _startupDelay = Duration(milliseconds: 2700);
 const Duration _windowEnforcementInterval = Duration(milliseconds: 2700);
+const Duration _processTerminationTimeout = Duration(milliseconds: 2700+2700);
 
 class WidgetWallController {
   WidgetWallController({
@@ -49,7 +50,10 @@ class WidgetWallController {
       );
       _drainProcessOutput(process);
 
-      _tryAssignProcessToJob(process.pid);
+      final assignedToJob = await _assignProcessToJob(process);
+      if (!assignedToJob) {
+        continue;
+      }
 
       final hwnd = await waitForMainWindow(
         pid: process.pid,
@@ -112,11 +116,32 @@ class WidgetWallController {
     _managed.clear();
   }
 
-  void _tryAssignProcessToJob(int pid) {
+  Future<bool> _assignProcessToJob(Process process) async {
     try {
-      _jobObject?.assignProcess(pid);
-    } catch (_) {
-      eventLog.warning('Could not assign PID $pid to the cleanup job.');
+      _jobObject!.assignProcess(process.pid);
+      return true;
+    } catch (error, stackTrace) {
+      eventLog.error(
+        'Could not assign PID ${process.pid} to the cleanup job. '
+        'Terminating it immediately.',
+        error,
+        stackTrace,
+      );
+
+      process.kill();
+      try {
+        await process.exitCode.timeout(_processTerminationTimeout);
+      } on TimeoutException catch (terminationError, terminationStackTrace) {
+        eventLog.error(
+          'PID ${process.pid} did not exit within '
+          '${_processTerminationTimeout.inSeconds} seconds.',
+          terminationError,
+          terminationStackTrace,
+        );
+        rethrow;
+      }
+
+      return false;
     }
   }
 
