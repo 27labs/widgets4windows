@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
+const Duration _defaultWindowPollTimeout = Duration(seconds: 27);
+
 class WallConfig {
   WallConfig({
     required this.rows,
@@ -64,7 +66,7 @@ class WidgetEntry {
     required this.columnSpan,
     required this.arguments,
     this.workingDirectory,
-    this.windowPollTimeout = const Duration(seconds: 27),
+    this.windowPollTimeout = _defaultWindowPollTimeout,
   });
 
   final String exe;
@@ -96,7 +98,8 @@ class WidgetEntry {
       arguments: args,
       workingDirectory: yaml['workingDirectory']?.toString(),
       windowPollTimeout: Duration(
-        milliseconds: (yaml['windowPollTimeoutMs'] as int?) ?? 27000,
+        milliseconds: (yaml['windowPollTimeoutMs'] as int?) ??
+            _defaultWindowPollTimeout.inMilliseconds,
       ),
     );
   }

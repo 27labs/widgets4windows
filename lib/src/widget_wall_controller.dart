@@ -5,6 +5,9 @@ import 'package:widget_wall/src/config.dart';
 import 'package:widget_wall/src/windows_api.dart';
 import 'package:widget_wall/src/windows_event_log.dart';
 
+const Duration _startupDelay = Duration(milliseconds: 2700);
+const Duration _windowEnforcementInterval = Duration(milliseconds: 2700);
+
 class WidgetWallController {
   WidgetWallController({
     required this.config,
@@ -24,7 +27,7 @@ class WidgetWallController {
       throw StateError('WidgetWallController.start() was already called.');
     }
 
-    await Future<void>.delayed(const Duration(milliseconds: 2700));
+    await Future<void>.delayed(_startupDelay);
 
     _jobObject = WindowsJobObject.createKillOnClose();
     final display = getPrimaryWorkAreaBounds();
@@ -48,11 +51,10 @@ class WidgetWallController {
 
       _tryAssignProcessToJob(process.pid);
 
-      final hwnd = 
-          await waitForMainWindow(
-            pid: process.pid,
-            timeout: widget.windowPollTimeout,
-          );
+      final hwnd = await waitForMainWindow(
+        pid: process.pid,
+        timeout: widget.windowPollTimeout,
+      );
 
       if (hwnd == null) {
         eventLog.warning(
@@ -80,11 +82,11 @@ class WidgetWallController {
       );
     }
 
-    _enforcerTimer = Timer.periodic(const Duration(milliseconds: 2700), (_) {
+    _enforcerTimer = Timer.periodic(_windowEnforcementInterval, (_) {
       for (final entry in _managed) {
         final hwnd = entry.hwnd;
         final rect = entry.rect;
-        if (hwnd != null && rect != null && isWindowAlive(hwnd)) {
+        if (isWindowAlive(hwnd)) {
           hideWindowFromTaskbar(hwnd);
           showAndPlaceWindow(hwnd, rect);
           pushWindowToBottom(hwnd);
@@ -105,11 +107,7 @@ class WidgetWallController {
 
     for (final entry in _managed) {
       final hwnd = entry.hwnd;
-      if (
-          hwnd != null 
-      ) {
-        closeWindowGracefully(hwnd);
-      }
+      closeWindowGracefully(hwnd);
     }
     _managed.clear();
   }
@@ -143,6 +141,6 @@ class ManagedWidgetProcess {
   });
 
   final Process process;
-  final int? hwnd;
-  final GridRect? rect;
+  final int hwnd;
+  final GridRect rect;
 }
