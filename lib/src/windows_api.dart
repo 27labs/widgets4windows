@@ -60,6 +60,24 @@ class WindowInfo {
   final int pid;
 }
 
+final class WindowOperationException implements Exception {
+  const WindowOperationException({
+    required this.operation,
+    required this.hwnd,
+    required this.win32Error,
+  });
+
+  final String operation;
+  final int hwnd;
+  final int win32Error;
+
+  @override
+  String toString() {
+    return '$operation failed for HWND $hwnd '
+        '(Win32 error $win32Error).';
+  }
+}
+
 class GridLayout {
   GridLayout({
     required this.rows,
@@ -140,7 +158,7 @@ DisplayBounds getPrimaryWorkAreaBounds() {
 void showAndPlaceWindow(int hwnd, GridRect rect) {
   ShowWindow(hwnd, SW_RESTORE);
   final insets = getWindowVisibleInsets(hwnd);
-  SetWindowPos(
+  final result = SetWindowPos(
     hwnd,
     HWND_BOTTOM,
     rect.left - insets.left,
@@ -149,16 +167,36 @@ void showAndPlaceWindow(int hwnd, GridRect rect) {
     rect.height + insets.top + insets.bottom,
     SWP_NOACTIVATE | SWP_SHOWWINDOW,
   );
+  _checkWindowOperation(result, 'SetWindowPos(place)', hwnd);
 }
 
 void hideWindowFromTaskbar(int hwnd) {
+  SetLastError(0);
   final extendedStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-  final hiddenStyle = (extendedStyle | WS_EX_TOOLWINDOW) & ~WS_EX_APPWINDOW;
-  if (hiddenStyle != extendedStyle) {
-    SetWindowLongPtr(hwnd, GWL_EXSTYLE, hiddenStyle);
+  final getStyleError = GetLastError();
+  if (extendedStyle == 0 && getStyleError != 0) {
+    throw WindowOperationException(
+      operation: 'GetWindowLongPtr(GWL_EXSTYLE)',
+      hwnd: hwnd,
+      win32Error: getStyleError,
+    );
   }
 
-  SetWindowPos(
+  final hiddenStyle = (extendedStyle | WS_EX_TOOLWINDOW) & ~WS_EX_APPWINDOW;
+  if (hiddenStyle != extendedStyle) {
+    SetLastError(0);
+    final previousStyle = SetWindowLongPtr(hwnd, GWL_EXSTYLE, hiddenStyle);
+    final setStyleError = GetLastError();
+    if (previousStyle == 0 && setStyleError != 0) {
+      throw WindowOperationException(
+        operation: 'SetWindowLongPtr(GWL_EXSTYLE)',
+        hwnd: hwnd,
+        win32Error: setStyleError,
+      );
+    }
+  }
+
+  final result = SetWindowPos(
     hwnd,
     0,
     0,
@@ -167,10 +205,11 @@ void hideWindowFromTaskbar(int hwnd) {
     0,
     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
   );
+  _checkWindowOperation(result, 'SetWindowPos(frame)', hwnd);
 }
 
 void pushWindowToBottom(int hwnd) {
-  SetWindowPos(
+  final result = SetWindowPos(
     hwnd,
     HWND_BOTTOM,
     0,
@@ -179,12 +218,23 @@ void pushWindowToBottom(int hwnd) {
     0,
     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
   );
+  _checkWindowOperation(result, 'SetWindowPos(z-order)', hwnd);
 }
 
 bool isWindowAlive(int hwnd) => IsWindow(hwnd) != 0;
 
 void closeWindowGracefully(int hwnd) {
-  PostMessage(hwnd, WM_CLOSE, 0, 0);
+  final result = PostMessage(hwnd, WM_CLOSE, 0, 0);
+  _checkWindowOperation(result, 'PostMessage(WM_CLOSE)', hwnd);
+}
+
+void _checkWindowOperation(int result, String operation, int hwnd) {
+  if (result != 0) return;
+  throw WindowOperationException(
+    operation: operation,
+    hwnd: hwnd,
+    win32Error: GetLastError(),
+  );
 }
 
 WindowInsets getWindowVisibleInsets(int hwnd) {

@@ -7,7 +7,8 @@ import 'package:widget_wall/src/windows_event_log.dart';
 
 const Duration _startupDelay = Duration(milliseconds: 2700);
 const Duration _windowEnforcementInterval = Duration(milliseconds: 2700);
-const Duration _processTerminationTimeout = Duration(milliseconds: 2700+2700);
+const Duration _processTerminationTimeout = Duration(milliseconds: 2700 + 2700);
+const Duration _windowOperationInitialRetryDelay = Duration(milliseconds: 100);
 
 class WidgetWallController {
   WidgetWallController({
@@ -75,25 +76,19 @@ class WidgetWallController {
         columnSpan: widget.columnSpan,
       );
 
-      hideWindowFromTaskbar(hwnd);
-      showAndPlaceWindow(hwnd, rect);
-      _managed.add(
-        ManagedWidgetProcess(
-          process: process,
-          hwnd: hwnd,
-          rect: rect,
-        ),
+      final managed = ManagedWidgetProcess(
+        process: process,
+        hwnd: hwnd,
+        rect: rect,
       );
+      _managed.add(managed);
+      _enforceWindow(managed, includePushToBottom: false);
     }
 
     _enforcerTimer = Timer.periodic(_windowEnforcementInterval, (_) {
       for (final entry in _managed) {
-        final hwnd = entry.hwnd;
-        final rect = entry.rect;
-        if (isWindowAlive(hwnd)) {
-          hideWindowFromTaskbar(hwnd);
-          showAndPlaceWindow(hwnd, rect);
-          pushWindowToBottom(hwnd);
+        if (isWindowAlive(entry.hwnd)) {
+          _enforceWindow(entry);
         }
       }
     });
@@ -111,9 +106,88 @@ class WidgetWallController {
 
     for (final entry in _managed) {
       final hwnd = entry.hwnd;
-      closeWindowGracefully(hwnd);
+      try {
+        closeWindowGracefully(hwnd);
+      } catch (error) {
+        eventLog.error(
+          'event=window.close.failed hwnd=$hwnd',
+          error,
+        );
+      }
     }
     _managed.clear();
+  }
+
+  void _enforceWindow(
+    ManagedWidgetProcess entry, {
+    bool includePushToBottom = true,
+  }) {
+    final hwnd = entry.hwnd;
+
+    _startWindowOperationRetries(
+      operation: 'hide-taskbar',
+      hwnd: hwnd,
+      action: () => hideWindowFromTaskbar(hwnd),
+    );
+    _startWindowOperationRetries(
+      operation: 'place-window',
+      hwnd: hwnd,
+      action: () => showAndPlaceWindow(hwnd, entry.rect),
+    );
+    if (includePushToBottom) {
+      _startWindowOperationRetries(
+        operation: 'push-to-bottom',
+        hwnd: hwnd,
+        action: () => pushWindowToBottom(hwnd),
+      );
+    }
+  }
+
+  void _startWindowOperationRetries({
+    required String operation,
+    required int hwnd,
+    required void Function() action,
+  }) {
+    unawaited(
+      _retryWindowOperation(
+        operation: operation,
+        hwnd: hwnd,
+        action: action,
+      ),
+    );
+  }
+
+  Future<void> _retryWindowOperation({
+    required String operation,
+    required int hwnd,
+    required void Function() action,
+  }) async {
+    var attempt = 1;
+    var retryDelay = _windowOperationInitialRetryDelay;
+    final elapsed = Stopwatch()..start();
+
+    while (!_disposed && isWindowAlive(hwnd)) {
+      try {
+        action();
+        return;
+      } catch (error) {
+        final remaining = _windowEnforcementInterval - elapsed.elapsed;
+        final willRetry = retryDelay < remaining;
+        eventLog.error(
+          'event=window.operation.failed operation=$operation hwnd=$hwnd '
+          'attempt=$attempt retryInMs='
+          '${willRetry ? retryDelay.inMilliseconds : 'none'}',
+          error,
+        );
+
+        if (!willRetry) return;
+        await Future<void>.delayed(retryDelay);
+        retryDelay = Duration(
+          microseconds: retryDelay.inMicroseconds * 2,
+        );
+        attempt++;
+      }
+    }
   }
 
   Future<bool> _assignProcessToJob(Process process) async {

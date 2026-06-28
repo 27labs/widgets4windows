@@ -72,6 +72,17 @@ Pass a custom config path if needed:
 dart run bin/widget_wall.dart .\my-wall.yaml
 ```
 
+## Logging
+
+Runtime messages are written to the Windows Application event log under the
+`Widget Wall` source. Native window failures use these searchable event names:
+
+- `event=window.operation.failed`: a taskbar, placement, or z-order operation
+  failed and will be retried with exponential backoff during the current
+  enforcement interval.
+- `event=window.close.failed`: a graceful-close message could not be posted
+  during shutdown.
+
 ## MVP Notes
 
 - The MVP targets the primary monitor's desktop work area, so the taskbar is respected when it is visible.
