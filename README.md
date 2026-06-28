@@ -34,8 +34,10 @@ widgets:
 Supported fields per widget:
 
 - `grid.padding`: optional pixel gap used both between windows and as the outer margin from the desktop edges. Defaults to `0`.
-- `exe`: executable to launch. Relative executable names are resolved using
-  the controller process's `PATH` environment variable.
+- `exe`: native executable to launch. Relative executable paths are resolved
+  using the controller process's inherited `PATH` environment variable, as
+  when launching the executable from a terminal. Shell aliases, functions,
+  and built-in commands are not supported.
 - `args`: optional argument array.
 - `row`, `column`: zero-based grid position.
 - `rowSpan`, `columnSpan`: size in cells.
