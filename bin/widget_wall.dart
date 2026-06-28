@@ -14,10 +14,35 @@ Future<void> main(List<String> args) async {
     return;
   }
 
+  final configPath = args.isNotEmpty ? args.first : _defaultConfigPath();
+  final WallConfig config;
+  try {
+    config = await WallConfig.load(configPath);
+  } on PathNotFoundException catch (error) {
+    eventLog.error(
+      'Configuration file not found: "$configPath".',
+      error,
+    );
+    exitCode = 1;
+    return;
+  } on FormatException catch (error) {
+    eventLog.error(
+      'Invalid configuration file "$configPath".',
+      error,
+    );
+    exitCode = 1;
+    return;
+  } on FileSystemException catch (error) {
+    eventLog.error(
+      'Could not read configuration file "$configPath".',
+      error,
+    );
+    exitCode = 1;
+    return;
+  }
+
   WidgetWallController? controller;
   try {
-    final configPath = args.isNotEmpty ? args.first : _defaultConfigPath();
-    final config = await WallConfig.load(configPath);
     controller = WidgetWallController(config: config, eventLog: eventLog);
 
     Future<void> shutdown() async {

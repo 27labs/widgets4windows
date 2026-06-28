@@ -33,16 +33,19 @@ widgets:
 
 Supported fields per widget:
 
-- `grid.padding`: optional pixel gap used both between windows and as the outer margin from the desktop edges. Defaults to `0`.
+- `grid.rows`, `grid.columns`: positive grid dimensions.
+- `grid.padding`: optional non-negative pixel gap used both between windows and
+  as the outer margin from the desktop edges.
 - `exe`: native executable to launch. Relative executable paths are resolved
   using the controller process's inherited `PATH` environment variable, as
   when launching the executable from a terminal. Shell aliases, functions,
   and built-in commands are not supported.
-- `args`: optional argument array.
-- `row`, `column`: zero-based grid position.
-- `rowSpan`, `columnSpan`: size in cells.
-- `workingDirectory`: optional working directory for the process.
-- `windowPollTimeoutMs`: optional timeout while waiting for the window to appear.
+- `args`: optional array of string arguments.
+- `row`, `column`: non-negative, zero-based grid position.
+- `rowSpan`, `columnSpan`: positive size in cells.
+- `workingDirectory`: optional non-empty working-directory path.
+- `windowPollTimeoutMs`: optional positive timeout in milliseconds while
+  waiting for the window to appear.
 
 If the same executable appears multiple times, the controller launches one separate instance for each entry.
 
