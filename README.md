@@ -34,7 +34,8 @@ widgets:
 Supported fields per widget:
 
 - `grid.padding`: optional pixel gap used both between windows and as the outer margin from the desktop edges. Defaults to `0`.
-- `exe`: executable to launch.
+- `exe`: executable to launch. Relative executable names are resolved using
+  the controller process's `PATH` environment variable.
 - `args`: optional argument array.
 - `row`, `column`: zero-based grid position.
 - `rowSpan`, `columnSpan`: size in cells.
@@ -48,7 +49,7 @@ If the same executable appears multiple times, the controller launches one separ
 1. Install the Dart SDK on Windows.
 2. Run `dart pub get`
 3. Update `config.yaml`
-4. Start the wall with `dart run bin/widget_wall.dart`
+4. Start the wall with `dart run bin/widget_wall.dart config.yaml`
 
 When compiled to an `.exe`, running without arguments loads `config.yaml` from the same directory as the executable.
 To compile the controller and prevent a terminal window from opening when it is launched, use `editbin.exe` from a Visual Studio Developer PowerShell:
