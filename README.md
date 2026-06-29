@@ -73,6 +73,14 @@ Pass a custom config path if needed:
 dart run bin/widget_wall.dart .\my-wall.yaml
 ```
 
+## Tests
+
+Run the automated configuration and grid-layout suite with:
+
+```powershell
+dart test
+```
+
 ## Logging
 
 Runtime messages are written to the Windows Application event log under the
