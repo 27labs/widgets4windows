@@ -4,8 +4,13 @@ import 'dart:io';
 import 'package:widget_wall/src/config.dart';
 import 'package:widget_wall/src/widget_wall_controller.dart';
 import 'package:widget_wall/src/windows_event_log.dart';
+import 'package:win32/win32.dart';
 
 Future<void> main(List<String> args) async {
+  // Keep work-area and window-placement coordinates in physical pixels.
+  // This must happen before this process makes any window-system calls.
+  registerHighDPISupport();
+
   final eventLog = WindowsEventLog();
 
   final configPath = args.isNotEmpty ? args.first : _defaultConfigPath();
