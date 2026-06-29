@@ -9,8 +9,8 @@ class WallConfig {
     required this.rows,
     required this.columns,
     required this.padding,
-    required this.widgets,
-  });
+    required List<WidgetEntry> widgets,
+  }) : widgets = List<WidgetEntry>.unmodifiable(widgets);
 
   final int rows;
   final int columns;
@@ -82,7 +82,7 @@ class WallConfig {
       rows: rows,
       columns: columns,
       padding: padding,
-      widgets: widgets.toList(growable: false),
+      widgets: widgets,
     );
   }
 }
@@ -94,10 +94,10 @@ class WidgetEntry {
     required this.column,
     required this.rowSpan,
     required this.columnSpan,
-    required this.arguments,
+    required List<String> arguments,
     this.workingDirectory,
     this.windowPollTimeout = _defaultWindowPollTimeout,
-  });
+  }) : arguments = List<String>.unmodifiable(arguments);
 
   final String exe;
   final int row;
@@ -206,7 +206,7 @@ List<String> _readStringList(
     }
     result.add(item);
   }
-  return result.toList(growable: false);
+  return result;
 }
 
 int _readPositiveInt(

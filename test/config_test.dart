@@ -77,6 +77,35 @@ widgets:
     expect(widget.windowPollTimeout, const Duration(milliseconds: 1270));
   });
 
+  test('defensively copies and exposes unmodifiable collections', () {
+    final sourceArguments = <String>['--mode'];
+    final widget = WidgetEntry(
+      exe: 'tool.exe',
+      row: 0,
+      column: 0,
+      rowSpan: 1,
+      columnSpan: 1,
+      arguments: sourceArguments,
+    );
+    final sourceWidgets = <WidgetEntry>[widget];
+    final config = WallConfig(
+      rows: 1,
+      columns: 1,
+      padding: 0,
+      widgets: sourceWidgets,
+    );
+
+    sourceArguments.add('compact');
+    sourceWidgets.clear();
+
+    expect(widget.arguments, ['--mode']);
+    expect(config.widgets, [same(widget)]);
+    expect(() => widget.arguments.add('compact'), throwsUnsupportedError);
+    expect(() => widget.arguments[0] = '--other', throwsUnsupportedError);
+    expect(() => config.widgets.add(widget), throwsUnsupportedError);
+    expect(() => config.widgets[0] = widget, throwsUnsupportedError);
+  });
+
   test('reports a missing configuration file', () async {
     final path = '${tempDirectory.path}/missing.yaml';
 
