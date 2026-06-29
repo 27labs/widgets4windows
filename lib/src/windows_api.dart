@@ -7,6 +7,7 @@ import 'package:win32/win32.dart';
 const int jobObjectLimitKillOnJobClose = 0x00002000;
 const int spiGetWorkArea = 0x0030;
 const int dwmwaExtendedFrameBounds = 9;
+const Duration _windowPollInterval = Duration(milliseconds: 270);
 
 class DisplayBounds {
   const DisplayBounds({
@@ -48,16 +49,6 @@ class WindowInsets {
   final int top;
   final int right;
   final int bottom;
-}
-
-class WindowInfo {
-  const WindowInfo({
-    required this.hwnd,
-    required this.pid,
-  });
-
-  final int hwnd;
-  final int pid;
 }
 
 final class WindowOperationException implements Exception {
@@ -319,39 +310,29 @@ final class WindowsJobObject {
   }
 }
 
-class _WindowSearchState {
-  _WindowSearchState({
-    this.pid,
-  });
-
-  final int? pid;
-  int? hwnd;
-  final List<WindowInfo> windows = [];
-}
-
-_WindowSearchState? _activeWindowSearch;
-
-int _enumWindowsProc(int hwnd, int _) {
-  final state = _activeWindowSearch;
-  if (state == null) return TRUE;
-
+int? _findMainWindow(int pid) {
+  int? foundHwnd;
   final pidPointer = calloc<Uint32>();
-  try {
-    GetWindowThreadProcessId(hwnd, pidPointer);
-    final isVisible = IsWindowVisible(hwnd) != 0;
-    final owner = GetWindow(hwnd, GW_OWNER);
-    if (isVisible && owner == 0) {
-      final windowInfo = WindowInfo(hwnd: hwnd, pid: pidPointer.value);
-      state.windows.add(windowInfo);
-
-      final matchesPid = state.pid != null && pidPointer.value == state.pid;
-      if (matchesPid) {
-        state.hwnd = hwnd;
+  final callback = NativeCallable<WNDENUMPROC>.isolateLocal(
+    (int hwnd, int _) {
+      pidPointer.value = 0;
+      GetWindowThreadProcessId(hwnd, pidPointer);
+      final isVisible = IsWindowVisible(hwnd) != 0;
+      final owner = GetWindow(hwnd, GW_OWNER);
+      if (isVisible && owner == 0 && pidPointer.value == pid) {
+        foundHwnd = hwnd;
         return FALSE;
       }
-    }
-    return TRUE;
+      return TRUE;
+    },
+    exceptionalReturn: TRUE,
+  );
+
+  try {
+    EnumWindows(callback.nativeFunction, 0);
+    return foundHwnd;
   } finally {
+    callback.close();
     calloc.free(pidPointer);
   }
 }
@@ -360,19 +341,17 @@ Future<int?> waitForMainWindow({
   required int pid,
   required Duration timeout,
 }) async {
-  final startedAt = DateTime.now();
-  final callback = Pointer.fromFunction<WNDENUMPROC>(_enumWindowsProc, TRUE);
+  final elapsed = Stopwatch()..start();
 
-  while (DateTime.now().difference(startedAt) < timeout) {
-    final state = _WindowSearchState(pid: pid);
-    _activeWindowSearch = state;
-    EnumWindows(callback, 0);
-    _activeWindowSearch = null;
+  while (elapsed.elapsed < timeout) {
+    final hwnd = _findMainWindow(pid);
+    if (hwnd != null) return hwnd;
 
-    if (state.hwnd != null) {
-      return state.hwnd;
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 270));
+    final remaining = timeout - elapsed.elapsed;
+    if (remaining <= Duration.zero) break;
+    await Future<void>.delayed(
+      remaining < _windowPollInterval ? remaining : _windowPollInterval,
+    );
   }
 
   return null;

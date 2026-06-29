@@ -43,47 +43,9 @@ class WidgetWallController {
       padding: config.padding,
     );
 
-    for (final widget in config.widgets) {
-      final process = await Process.start(
-        widget.exe,
-        widget.arguments,
-        workingDirectory: widget.workingDirectory,
-      );
-      _drainProcessOutput(process);
-
-      final assignedToJob = await _assignProcessToJob(process);
-      if (!assignedToJob) {
-        continue;
-      }
-
-      final hwnd = await waitForMainWindow(
-        pid: process.pid,
-        timeout: widget.windowPollTimeout,
-      );
-
-      if (hwnd == null) {
-        eventLog.warning(
-          'Killing PID ${process.pid} (${widget.exe}) because no visible top-level window appeared.',
-        );
-        process.kill();
-        continue;
-      }
-
-      final rect = layout.rectFor(
-        row: widget.row,
-        column: widget.column,
-        rowSpan: widget.rowSpan,
-        columnSpan: widget.columnSpan,
-      );
-
-      final managed = ManagedWidgetProcess(
-        process: process,
-        hwnd: hwnd,
-        rect: rect,
-      );
-      _managed.add(managed);
-      _enforceWindow(managed, includePushToBottom: false);
-    }
+    await Future.wait(
+      config.widgets.map((widget) => _startWidget(widget, layout)),
+    );
 
     _enforcerTimer = Timer.periodic(_windowEnforcementInterval, (_) {
       for (final entry in _managed) {
@@ -92,6 +54,46 @@ class WidgetWallController {
         }
       }
     });
+  }
+
+  Future<void> _startWidget(WidgetEntry widget, GridLayout layout) async {
+    final process = await Process.start(
+      widget.exe,
+      widget.arguments,
+      workingDirectory: widget.workingDirectory,
+    );
+    _drainProcessOutput(process);
+
+    final assignedToJob = await _assignProcessToJob(process);
+    if (!assignedToJob) return;
+
+    final hwnd = await waitForMainWindow(
+      pid: process.pid,
+      timeout: widget.windowPollTimeout,
+    );
+
+    if (hwnd == null) {
+      eventLog.warning(
+        'Killing PID ${process.pid} (${widget.exe}) because no visible top-level window appeared.',
+      );
+      process.kill();
+      return;
+    }
+
+    final rect = layout.rectFor(
+      row: widget.row,
+      column: widget.column,
+      rowSpan: widget.rowSpan,
+      columnSpan: widget.columnSpan,
+    );
+
+    final managed = ManagedWidgetProcess(
+      process: process,
+      hwnd: hwnd,
+      rect: rect,
+    );
+    _managed.add(managed);
+    _enforceWindow(managed, includePushToBottom: false);
   }
 
   Future<void> dispose() async {

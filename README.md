@@ -3,7 +3,7 @@
 `Widgets4Windows` is a headless Dart controller for Windows 11 that:
 
 - reads a `config.yaml` file,
-- launches one process per configured widget entry,
+- launches all configured widget processes concurrently,
 - waits for each app's main window,
 - snaps each window into a fullscreen grid on the primary display,
 - keeps the managed windows pushed behind unrelated windows, and
