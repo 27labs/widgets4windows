@@ -322,13 +322,9 @@ final class WindowsJobObject {
 class _WindowSearchState {
   _WindowSearchState({
     this.pid,
-    this.existingHandles = const <int>{},
-    this.searchForNewHandle = false,
   });
 
   final int? pid;
-  final Set<int> existingHandles;
-  final bool searchForNewHandle;
   int? hwnd;
   final List<WindowInfo> windows = [];
 }
@@ -349,33 +345,12 @@ int _enumWindowsProc(int hwnd, int _) {
       state.windows.add(windowInfo);
 
       final matchesPid = state.pid != null && pidPointer.value == state.pid;
-      final isNewHandle =
-          state.searchForNewHandle && !state.existingHandles.contains(hwnd);
-      if (matchesPid || isNewHandle) {
+      if (matchesPid) {
         state.hwnd = hwnd;
         return FALSE;
       }
     }
     return TRUE;
-  } finally {
-    calloc.free(pidPointer);
-  }
-}
-
-List<WindowInfo> listVisibleTopLevelWindows() {
-  final callback = Pointer.fromFunction<WNDENUMPROC>(_enumWindowsProc, TRUE);
-  final state = _WindowSearchState();
-  _activeWindowSearch = state;
-  EnumWindows(callback, 0);
-  _activeWindowSearch = null;
-  return state.windows;
-}
-
-int getWindowProcessId(int hwnd) {
-  final pidPointer = calloc<Uint32>();
-  try {
-    GetWindowThreadProcessId(hwnd, pidPointer);
-    return pidPointer.value;
   } finally {
     calloc.free(pidPointer);
   }
@@ -397,32 +372,7 @@ Future<int?> waitForMainWindow({
     if (state.hwnd != null) {
       return state.hwnd;
     }
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-  }
-
-  return null;
-}
-
-Future<int?> waitForNewTopLevelWindow({
-  required Set<int> existingHandles,
-  required Duration timeout,
-}) async {
-  final startedAt = DateTime.now();
-  final callback = Pointer.fromFunction<WNDENUMPROC>(_enumWindowsProc, TRUE);
-
-  while (DateTime.now().difference(startedAt) < timeout) {
-    final state = _WindowSearchState(
-      existingHandles: existingHandles,
-      searchForNewHandle: true,
-    );
-    _activeWindowSearch = state;
-    EnumWindows(callback, 0);
-    _activeWindowSearch = null;
-
-    if (state.hwnd != null) {
-      return state.hwnd;
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 250));
+    await Future<void>.delayed(const Duration(milliseconds: 270));
   }
 
   return null;
