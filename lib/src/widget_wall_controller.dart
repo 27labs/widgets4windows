@@ -31,7 +31,6 @@ class WidgetWallController {
 
     await Future<void>.delayed(_startupDelay);
 
-    _jobObject = WindowsJobObject.createKillOnClose();
     final display = getPrimaryWorkAreaBounds();
     final layout = GridLayout(
       rows: config.rows,
@@ -42,6 +41,7 @@ class WidgetWallController {
       height: display.height,
       padding: config.padding,
     );
+    _jobObject = WindowsJobObject.createKillOnClose();
 
     await Future.wait(
       config.widgets.map((widget) => _startWidget(widget, layout)),

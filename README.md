@@ -35,7 +35,8 @@ Supported fields per widget:
 
 - `grid.rows`, `grid.columns`: positive grid dimensions.
 - `grid.padding`: optional non-negative pixel gap used both between windows and
-  as the outer margin from the desktop edges.
+  as the outer margin from the desktop edges. It must leave at least one pixel
+  per grid row and column within the primary work area.
 - `exe`: native executable to launch. Relative executable paths are resolved
   using the controller process's inherited `PATH` environment variable, as
   when launching the executable from a terminal. Shell aliases, functions,

@@ -54,6 +54,13 @@ Future<void> main(List<String> args) async {
 
     final done = Completer<void>();
     await done.future;
+  } on FormatException catch (error) {
+    eventLog.error(
+      'Invalid configuration file "$configPath".',
+      error,
+    );
+    exitCode = 1;
+    await controller?.dispose();
   } catch (error, stackTrace) {
     eventLog.error('Widget Wall failed.', error, stackTrace);
     exitCode = 1;

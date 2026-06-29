@@ -78,7 +78,26 @@ class GridLayout {
     required this.width,
     required this.height,
     required this.padding,
-  });
+  }) {
+    if (width < columns || height < rows) {
+      throw FormatException(
+        'The ${width}x$height primary work area cannot provide at least one '
+        'pixel per cell for grid.rows=$rows and grid.columns=$columns.',
+      );
+    }
+
+    final maxHorizontalPadding = (width - columns) ~/ (columns + 1);
+    final maxVerticalPadding = (height - rows) ~/ (rows + 1);
+    final maxPadding = maxHorizontalPadding < maxVerticalPadding
+        ? maxHorizontalPadding
+        : maxVerticalPadding;
+    if (padding > maxPadding) {
+      throw FormatException(
+        'grid.padding is $padding, but its maximum is $maxPadding for a '
+        '${rows}x$columns grid in the ${width}x$height primary work area.',
+      );
+    }
+  }
 
   final int rows;
   final int columns;
