@@ -57,11 +57,28 @@ class WidgetWallController {
   }
 
   Future<void> _startWidget(WidgetEntry widget, GridLayout layout) async {
-    final process = await Process.start(
-      widget.exe,
-      widget.arguments,
-      workingDirectory: widget.workingDirectory,
+    final workingDirectory = widget.workingDirectory ?? '<inherited>';
+    eventLog.info(
+      'event=spawn.widget.starting cmd="${widget.exe}" '
+      'args=${widget.arguments} cwd="$workingDirectory"',
     );
+
+    final Process process;
+    try {
+      process = await Process.start(
+        widget.exe,
+        widget.arguments,
+        workingDirectory: widget.workingDirectory,
+      );
+    } on ProcessException catch (error, stackTrace) {
+      eventLog.error(
+        'event=spawn.widget.failed cmd="${widget.exe}" '
+        'args=${widget.arguments} cwd="$workingDirectory"',
+        error,
+        stackTrace,
+      );
+      return;
+    }
     _drainProcessOutput(process);
 
     final assignedToJob = await _assignProcessToJob(process);

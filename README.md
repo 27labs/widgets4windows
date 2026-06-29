@@ -76,8 +76,12 @@ dart run bin/widget_wall.dart .\my-wall.yaml
 ## Logging
 
 Runtime messages are written to the Windows Application event log under the
-`Widget Wall` source. Native window failures use these searchable event names:
+`Widget Wall` source. Startup and native window failures use these searchable
+event names:
 
+- `event=spawn.widget.starting`: a configured widget process is being started.
+- `event=spawn.widget.failed`: a widget executable or working directory could
+  not be resolved; that widget is skipped while the others continue.
 - `event=window.operation.failed`: a taskbar, placement, or z-order operation
   failed and will be retried with exponential backoff during the current
   enforcement interval.
