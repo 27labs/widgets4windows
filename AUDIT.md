@@ -2,6 +2,7 @@
 
 Date: 2026-06-28  
 Mode: Balanced, whole-codebase audit
+Remediation status updated: 2026-06-28
 
 ## Scope
 
@@ -22,8 +23,9 @@ registers shutdown handling, and keeps the process alive.
 ### Main data flow
 
 1. `WallConfig.load` reads and parses YAML configuration.
-2. `WidgetWallController.start` creates a Windows Job Object.
-3. Each configured executable is launched.
+2. `WidgetWallController.start` validates the grid against the primary work
+   area, then creates a Windows Job Object.
+3. All configured executables are launched concurrently on the main isolate.
 4. The Win32 layer polls for the process's visible top-level window.
 5. `GridLayout` calculates the window bounds.
 6. The window is hidden from the taskbar, placed in the grid, and periodically
@@ -34,7 +36,12 @@ registers shutdown handling, and keeps the process alive.
 
 - `lib/src/config.dart`: configuration parsing and grid-bound validation.
 - `lib/src/widget_wall_controller.dart`: process lifecycle and orchestration.
-- `lib/src/windows_api.dart`: grid geometry and Win32 FFI operations.
+- `lib/src/windows_api.dart`: compatibility barrel for Windows modules.
+- `lib/src/windows/grid_layout.dart`: grid geometry and display-bound
+  validation.
+- `lib/src/windows/window_operations.dart`: window placement, discovery, and
+  checked Win32 operations.
+- `lib/src/windows/job_object.dart`: Windows Job Object lifecycle.
 - `lib/src/windows_event_log.dart`: Windows Event Log integration.
 - `bin/widget_wall.dart`: application startup, shutdown, and top-level errors.
 
@@ -44,7 +51,7 @@ registers shutdown handling, and keeps the process alive.
 | --- | --- |
 | `dart analyze` | Passed with no issues |
 | `dart format --output=none --set-exit-if-changed .` | Passed; no changes |
-| `dart test` | Blocked: no `test` dependency or test suite |
+| `dart test` | Passed; 25 tests |
 
 ## Summary
 
@@ -56,6 +63,36 @@ native error handling, observability, performance, tests, and code structure.
 | Critical | 3 |
 | Suggested | 9 |
 | Nit | 3 |
+
+## Remediation status
+
+The original findings and locations below are preserved as the pre-remediation
+audit record. Their line references do not describe the reorganized source
+layout.
+
+| # | Status | Resolution |
+| ---: | --- | --- |
+| 1 | Resolved | Source-mode documentation now passes `config.yaml` explicitly; the intended compiled-executable default remains unchanged. |
+| 2 | Accepted by design | Relative native executable paths are resolved through the controller's inherited `PATH`, matching terminal invocation. This contract and its shell-command limitations are documented. |
+| 3 | Resolved | A Job Object assignment failure preserves the native error, kills the unassigned process immediately, and verifies termination before continuing. |
+| 4 | Resolved | YAML values are explicitly validated, errors identify the first invalid configuration path, and timeouts must be positive. Missing and malformed files exit gracefully with descriptive Event Log entries. |
+| 5 | Resolved | Fallible native operations report operation, HWND, and Win32 error details. Independent operations continue and retry with exponential backoff within each enforcement interval. `ShowWindow` is intentionally excluded because its return value reports prior visibility rather than success. |
+| 6 | Deferred | Event Log remains the sole sink because the compiled application has no standard streams. Registration/reporting failure recovery was intentionally deferred. |
+| 7 | Resolved | Widget launch and window discovery run concurrently, reducing startup toward the longest individual timeout. |
+| 8 | Resolved | Window discovery uses short-lived isolate-local FFI callbacks and `Stopwatch`; global callback state was removed. |
+| 9 | Resolved | The unreachable non-Windows guard was removed; the application is explicitly Windows-only. |
+| 10 | Resolved | Grid padding is validated against the actual primary work area before Job Object creation or widget launch, guaranteeing at least one pixel per grid track. |
+| 11 | Resolved | Expected `Process.start` failures are logged per widget and isolated so other widgets continue starting. |
+| 12 | Resolved | Dart's `test` harness now covers YAML parsing and validation, timeout boundaries, grid geometry, padding thresholds, and configuration immutability. PATH behavior was verified separately at runtime. |
+| 13 | Resolved | Configuration constructors defensively copy widget and argument lists into unmodifiable collections. |
+| 14 | Resolved | The unused window-listing, PID lookup, and new-window discovery APIs and their orphaned state types were removed. |
+| 15 | Resolved | Windows concerns were split under `lib/src/windows/`; `windows_api.dart` remains a compatibility barrel. |
+
+| Outcome | Count |
+| --- | ---: |
+| Resolved | 13 |
+| Accepted by design | 1 |
+| Deferred | 1 |
 
 ## Critical findings
 
@@ -262,5 +299,6 @@ movement should be a separate change so it does not obscure functional diffs.
 
 ## Audit status
 
-No fixes were applied as part of this audit-writing step. Structural changes
-remain gated on adding a test harness and establishing a green baseline.
+Remediation is complete for every finding except finding 6, which is explicitly
+deferred. The automated baseline is green with analysis, formatting, and all
+25 tests passing.
