@@ -8,12 +8,6 @@ import 'package:widget_wall/src/windows_event_log.dart';
 Future<void> main(List<String> args) async {
   final eventLog = WindowsEventLog();
 
-  if (!Platform.isWindows) {
-    eventLog.error('This MVP only supports Windows 11.');
-    exitCode = 2;
-    return;
-  }
-
   final configPath = args.isNotEmpty ? args.first : _defaultConfigPath();
   final WallConfig config;
   try {
